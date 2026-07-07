@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZenTask - Đăng nhập</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Style CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .auth-wrapper {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .auth-card {
+            width: 100%;
+            max-width: 420px;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+        }
+        .auth-header {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+        .auth-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 52px;
+            height: 52px;
+            border-radius: var(--radius-md);
+            background: var(--accent-gradient);
+            color: #ffffff;
+            box-shadow: 0 8px 20px rgba(139, 92, 246, 0.3);
+            margin-bottom: 8px;
+        }
+        .auth-header h2 {
+            font-family: var(--font-heading);
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #ffffff 30%, #c084fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .auth-header p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        .form-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            position: relative;
+        }
+        .form-group label {
+            font-family: var(--font-heading);
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .form-group input {
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-md);
+            color: #ffffff;
+            font-family: var(--font-body);
+            outline: none;
+            transition: all var(--transition-fast);
+        }
+        .form-group input:focus {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+        }
+        .error-msg {
+            font-size: 0.8rem;
+            color: var(--danger);
+            margin-top: 4px;
+            display: none;
+        }
+        .auth-footer {
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .auth-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color var(--transition-fast);
+        }
+        .auth-link:hover {
+            color: #c084fc;
+            text-decoration: underline;
+        }
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 16px 24px;
+            border-radius: var(--radius-md);
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 1000;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.4s var(--ease-spring);
+        }
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .toast-success { border-color: var(--success-border); color: var(--success); }
+        .toast-error { border-color: var(--danger-border); color: var(--danger); }
+    </style>
+</head>
+<body>
+
+    <!-- Aurora Background -->
+    <div class="glow-bg">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="auth-wrapper">
+        <div class="glass-panel auth-card">
+            <div class="auth-header">
+                <div class="auth-logo">
+                    <i data-lucide="check-square" style="width: 28px; height: 28px;"></i>
+                </div>
+                <h2>ZenTask</h2>
+                <p>Đăng nhập để quản lý công việc của bạn</p>
+            </div>
+
+            <form id="login-form" class="form-container">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" required placeholder="nhapemail@example.com">
+                    <div class="error-msg" id="email-error"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Mật khẩu</label>
+                    <input type="password" id="password" required placeholder="••••••••">
+                    <div class="error-msg" id="password-error"></div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px; margin-top: 10px;">
+                    Đăng nhập <i data-lucide="log-in" style="width: 18px; height: 18px;"></i>
+                </button>
+            </form>
+
+            <div class="auth-footer">
+                <div>Chưa có tài khoản? <a href="register.html" class="auth-link">Đăng ký ngay</a></div>
+                <div><a href="forgot-password.html" class="auth-link">Quên mật khẩu?</a></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast" class="toast">
+        <i id="toast-icon"></i>
+        <span id="toast-message"></span>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        const API_BASE_URL = 'http://localhost:8080/api/auth';
+        const loginForm = document.getElementById('login-form');
+        const toast = document.getElementById('toast');
+
+        // Check if there is an message in url (e.g. verified=true)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('verified') === 'true') {
+            showToast('Tài khoản đã được kích hoạt thành công! Hãy đăng nhập.', 'success');
+        } else if (urlParams.get('error') === 'verification_failed') {
+            showToast('Kích hoạt tài khoản thất bại! Mã xác nhận không hợp lệ hoặc đã hết hạn.', 'error');
+        }
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            resetErrors();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Save tokens
+                    localStorage.setItem('accessToken', data.accessToken);
+                    localStorage.setItem('refreshToken', data.refreshToken);
+                    localStorage.setItem('userEmail', data.email);
+
+                    showToast('Đăng nhập thành công! Đang chuyển hướng...', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1200);
+                } else {
+                    if (data.errors) {
+                        // Map validation errors
+                        for (const key in data.errors) {
+                            const errorDiv = document.getElementById(`${key}-error`);
+                            if (errorDiv) {
+                                errorDiv.innerText = data.errors[key];
+                                errorDiv.style.display = 'block';
+                            }
+                        }
+                    } else {
+                        showToast(data.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại tài khoản.', 'error');
+                    }
+                }
+            } catch (err) {
+                showToast('Không thể kết nối đến máy chủ backend!', 'error');
+            }
+        });
+
+        function resetErrors() {
+            document.querySelectorAll('.error-msg').forEach(el => {
+                el.innerText = '';
+                el.style.display = 'none';
+            });
+        }
+
+        function showToast(message, type = 'success') {
+            const toastIcon = document.getElementById('toast-icon');
+            const toastMessage = document.getElementById('toast-message');
+
+            toastMessage.innerText = message;
+            toast.className = `toast ${type === 'success' ? 'toast-success' : 'toast-error'} show`;
+            
+            if (type === 'success') {
+                toastIcon.setAttribute('data-lucide', 'check-circle');
+            } else {
+                toastIcon.setAttribute('data-lucide', 'alert-circle');
+            }
+            lucide.createIcons();
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
