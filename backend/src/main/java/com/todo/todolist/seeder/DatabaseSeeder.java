@@ -37,6 +37,9 @@ public class DatabaseSeeder implements CommandLineRunner {
                     return userRepository.save(user);
                 });
 
+        // Gán các công việc cũ (chưa có user_id) cho user mặc định
+        taskRepository.assignUnownedTasksToUser(defaultUser);
+
         if (taskRepository.count() == 0) {
             log.info("Database is empty. Seeding initial task data for zentask@gmail.com...");
 
