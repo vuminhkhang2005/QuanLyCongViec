@@ -11,12 +11,13 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface TaskRepository extends JpaRepository<Task, Long> {
 
-    @Query("SELECT t FROM Task t WHERE " +
+    @Query("SELECT t FROM Task t WHERE t.user.id = :userId AND " +
             "(:completed IS NULL OR t.completed = :completed) AND " +
             "(:search IS NULL OR LOWER(t.title) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<Task> findAllWithFilters(
             @Param("completed") Boolean completed,
             @Param("search") String search,
+            @Param("userId") Long userId,
             Pageable pageable
     );
 }

@@ -29,7 +29,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import org.springframework.security.test.context.support.WithMockUser;
+
+import org.springframework.context.annotation.Import;
+
 @WebMvcTest(TaskController.class)
+@WithMockUser
+@Import(com.todo.todolist.security.SecurityConfig.class)
 class TaskControllerTest {
 
     @Autowired
@@ -37,6 +43,12 @@ class TaskControllerTest {
 
     @MockBean
     private TaskService taskService;
+
+    @MockBean
+    private com.todo.todolist.security.JwtTokenProvider jwtTokenProvider;
+
+    @MockBean
+    private com.todo.todolist.security.CustomUserDetailsService customUserDetailsService;
 
     @Autowired
     private ObjectMapper objectMapper;

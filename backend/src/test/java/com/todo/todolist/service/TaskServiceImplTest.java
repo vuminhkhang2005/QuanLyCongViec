@@ -5,8 +5,10 @@ import com.todo.todolist.dto.TaskResponse;
 import com.todo.todolist.dto.UpdateTaskRequest;
 import com.todo.todolist.entity.Priority;
 import com.todo.todolist.entity.Task;
+import com.todo.todolist.entity.User;
 import com.todo.todolist.exception.ResourceNotFoundException;
 import com.todo.todolist.repository.TaskRepository;
+import com.todo.todolist.security.CustomUserDetails;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,6 +19,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -35,10 +40,18 @@ class TaskServiceImplTest {
     @InjectMocks
     private TaskServiceImpl taskService;
 
+    private User mockUser;
     private Task sampleTask;
 
     @BeforeEach
     void setUp() {
+        mockUser = User.builder()
+                .id(1L)
+                .email("zentask@gmail.com")
+                .password("hashed_password")
+                .enabled(true)
+                .build();
+
         sampleTask = Task.builder()
                 .id(1L)
                 .title("Sample Task")
@@ -48,7 +61,15 @@ class TaskServiceImplTest {
                 .dueDate(LocalDateTime.now().plusDays(1))
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
+                .user(mockUser) // Gán user mẫu vào task
                 .build();
+
+        // Thiết lập SecurityContext chứa mock user
+        CustomUserDetails userDetails = new CustomUserDetails(mockUser);
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                userDetails, null, userDetails.getAuthorities()
+        );
+        SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
     @Test
@@ -56,14 +77,14 @@ class TaskServiceImplTest {
         Pageable pageable = PageRequest.of(0, 10);
         Page<Task> page = new PageImpl<>(List.of(sampleTask));
 
-        when(taskRepository.findAllWithFilters(any(), any(), any(Pageable.class))).thenReturn(page);
+        when(taskRepository.findAllWithFilters(any(), any(), any(Long.class), any(Pageable.class))).thenReturn(page);
 
         Page<TaskResponse> result = taskService.getAllTasks(null, null, pageable);
 
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
         assertEquals("Sample Task", result.getContent().get(0).title());
-        verify(taskRepository, times(1)).findAllWithFilters(any(), any(), any(Pageable.class));
+        verify(taskRepository, times(1)).findAllWithFilters(any(), any(), any(Long.class), any(Pageable.class));
     }
 
     @Test
@@ -104,6 +125,7 @@ class TaskServiceImplTest {
                 .dueDate(request.dueDate())
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
+                .user(mockUser)
                 .build();
 
         when(taskRepository.save(any(Task.class))).thenReturn(savedTask);
