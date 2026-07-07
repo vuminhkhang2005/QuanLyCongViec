@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZenTask — Ứng dụng Quản lý Công việc Thông minh</title>
+    <meta name="description" content="ZenTask là một ứng dụng quản lý công việc hiện đại với phong cách thiết kế Glassmorphism và Dark Mode, giúp nâng cao năng suất làm việc của bạn.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Background Animated Blobs -->
+    <div class="glow-bg">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <!-- Main Application Container -->
+    <main class="app-container" id="app-container">
+        <!-- Dashboard Header -->
+        <header class="app-header">
+            <div class="brand">
+                <div class="logo-icon">
+                    <i data-lucide="check-check"></i>
+                </div>
+                <div>
+                    <h1>ZenTask</h1>
+                    <p class="subtitle">Quản lý hiệu năng công việc của bạn</p>
+                </div>
+            </div>
+            
+            <!-- Mini Stats Widget -->
+            <div class="stats-widget">
+                <div class="stats-info">
+                    <span class="stats-label">Tiến trình hôm nay</span>
+                    <span class="stats-value" id="stats-text">0 / 0 hoàn thành</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" id="progress-bar" style="width: 0%"></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Bento Grid Control Bar -->
+        <section class="control-panel">
+            <!-- Search & Filters Row -->
+            <div class="search-box">
+                <i data-lucide="search"></i>
+                <input type="text" id="search-input" placeholder="Tìm kiếm công việc theo tiêu đề..." aria-label="Tìm kiếm công việc">
+            </div>
+
+            <div class="filters-row">
+                <!-- Status Filters -->
+                <div class="filter-group">
+                    <span class="filter-label">Trạng thái</span>
+                    <div class="pill-group" id="status-filter">
+                        <button class="pill active" data-value="all">Tất cả</button>
+                        <button class="pill" data-value="false">Chưa làm</button>
+                        <button class="pill" data-value="true">Đã xong</button>
+                    </div>
+                </div>
+
+                <!-- Priority Filters -->
+                <div class="filter-group">
+                    <span class="filter-label">Độ ưu tiên</span>
+                    <div class="pill-group" id="priority-filter">
+                        <button class="pill active" data-value="all">Tất cả</button>
+                        <button class="pill text-high" data-value="HIGH">Cao</button>
+                        <button class="pill text-medium" data-value="MEDIUM">Vừa</button>
+                        <button class="pill text-low" data-value="LOW">Thấp</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sorting & Actions Row -->
+            <div class="actions-row">
+                <div class="sort-group">
+                    <i data-lucide="sliders-horizontal"></i>
+                    <select id="sort-by" aria-label="Sắp xếp theo">
+                        <option value="createdAt">Ngày tạo</option>
+                        <option value="dueDate">Hạn chót</option>
+                        <option value="priority">Độ ưu tiên</option>
+                        <option value="title">Tên việc</option>
+                    </select>
+                    <button class="icon-btn" id="sort-dir-btn" title="Đổi hướng sắp xếp" aria-label="Đổi hướng sắp xếp">
+                        <i data-lucide="arrow-down-narrow-wide" id="sort-dir-icon"></i>
+                    </button>
+                </div>
+
+                <button class="btn btn-primary" id="btn-open-create">
+                    <i data-lucide="plus"></i>
+                    <span>Thêm việc mới</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Tasks Content Area -->
+        <section class="tasks-area">
+            <!-- Shimmer Loading Container (hidden by default) -->
+            <div class="shimmer-container" id="shimmer-loader" style="display: none;">
+                <div class="shimmer-card"></div>
+                <div class="shimmer-card"></div>
+                <div class="shimmer-card"></div>
+            </div>
+
+            <!-- Main Tasks Grid -->
+            <div class="tasks-grid" id="tasks-grid">
+                <!-- Task Cards will be dynamically inserted here -->
+            </div>
+
+            <!-- Empty State Container -->
+            <div class="empty-state" id="empty-state" style="display: none;">
+                <div class="empty-icon">
+                    <i data-lucide="clipboard-list"></i>
+                </div>
+                <h3>Không tìm thấy công việc nào</h3>
+                <p>Hãy thử thay đổi bộ lọc hoặc thêm một công việc mới để bắt đầu ngày làm việc hiệu quả của bạn.</p>
+                <button class="btn btn-secondary" id="btn-empty-create">
+                    <i data-lucide="plus"></i>
+                    <span>Tạo việc mới ngay</span>
+                </button>
+            </div>
+
+            <!-- Pagination Bar -->
+            <footer class="pagination-bar" id="pagination-bar">
+                <button class="icon-btn" id="btn-prev-page" disabled aria-label="Trang trước">
+                    <i data-lucide="chevron-left"></i>
+                </button>
+                <span class="page-indicator" id="page-indicator">Trang 1 / 1</span>
+                <button class="icon-btn" id="btn-next-page" disabled aria-label="Trang sau">
+                    <i data-lucide="chevron-right"></i>
+                </button>
+            </footer>
+        </section>
+    </main>
+
+    <!-- Modal Form (Create/Edit) -->
+    <div class="modal-overlay" id="task-modal" aria-hidden="true" role="dialog">
+        <div class="modal-content glass-panel">
+            <header class="modal-header">
+                <h2 id="modal-title">Thêm công việc mới</h2>
+                <button class="icon-btn close-btn" id="btn-close-modal" aria-label="Đóng hộp thoại">
+                    <i data-lucide="x"></i>
+                </button>
+            </header>
+            
+            <form id="task-form" novalidate>
+                <input type="hidden" id="task-id">
+                
+                <div class="form-group">
+                    <label for="input-title">Tiêu đề công việc <span class="required">*</span></label>
+                    <input type="text" id="input-title" placeholder="Nhập tiêu đề (ví dụ: Học Spring Boot)" required>
+                    <div class="error-msg" id="error-title">Tiêu đề không được để trống</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="input-description">Mô tả công việc</label>
+                    <textarea id="input-description" rows="4" placeholder="Nhập mô tả chi tiết nội dung công việc..."></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Mức độ ưu tiên</label>
+                        <div class="priority-radio-group">
+                            <label class="priority-option option-low">
+                                <input type="radio" name="priority" value="LOW">
+                                <span>Thấp</span>
+                            </label>
+                            <label class="priority-option option-medium">
+                                <input type="radio" name="priority" value="MEDIUM" checked>
+                                <span>Vừa</span>
+                            </label>
+                            <label class="priority-option option-high">
+                                <input type="radio" name="priority" value="HIGH">
+                                <span>Cao</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="input-due-date">Hạn chót hoàn thành</label>
+                        <input type="datetime-local" id="input-due-date">
+                    </div>
+                </div>
+
+                <!-- Custom Checkbox for Edit Mode only -->
+                <div class="form-group" id="completed-group" style="display: none;">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="input-completed">
+                        <span class="checkmark"></span>
+                        <span class="label-text">Đã hoàn thành công việc này</span>
+                    </label>
+                </div>
+
+                <footer class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-modal">Hủy bỏ</button>
+                    <button type="submit" class="btn btn-primary" id="btn-submit-form">
+                        <span id="btn-submit-text">Xác nhận</span>
+                        <div class="spinner" id="btn-submit-spinner" style="display: none;"></div>
+                    </button>
+                </footer>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirm Delete Modal -->
+    <div class="modal-overlay" id="confirm-modal" aria-hidden="true" role="dialog">
+        <div class="modal-content glass-panel confirm-panel">
+            <div class="confirm-icon">
+                <i data-lucide="alert-triangle"></i>
+            </div>
+            <h2>Xác nhận xóa công việc?</h2>
+            <p>Hành động này không thể hoàn tác. Công việc "<strong id="delete-task-title"></strong>" sẽ bị xóa vĩnh viễn khỏi danh sách của bạn.</p>
+            <footer class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="btn-cancel-delete">Hủy</button>
+                <button type="button" class="btn btn-danger" id="btn-confirm-delete">Đồng ý xóa</button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Main JavaScript App -->
+    <script src="js/app.js"></script>
+</body>
+</html>
