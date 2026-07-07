@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+    <script>
+        // Ngăn chặn hiển thị nội dung nếu chưa đăng nhập (Auth Guard)
+        if (!localStorage.getItem('accessToken')) {
+            window.location.href = 'login.html';
+        }
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ZenTask — Ứng dụng Quản lý Công việc Thông minh</title>
@@ -34,6 +40,17 @@
                     <h1>ZenTask</h1>
                     <p class="subtitle">Quản lý hiệu năng công việc của bạn</p>
                 </div>
+            </div>
+            
+            <!-- User Status & Logout -->
+            <div class="user-profile" style="display: flex; align-items: center; gap: 16px;">
+                <div style="text-align: right;">
+                    <div style="font-weight: 600; font-size: 0.95rem; font-family: var(--font-heading);" id="user-display-email">...</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">Thành viên</div>
+                </div>
+                <button class="icon-btn" id="btn-logout" title="Đăng xuất" aria-label="Đăng xuất">
+                    <i data-lucide="log-out" style="width: 18px; height: 18px;"></i>
+                </button>
             </div>
             
             <!-- Mini Stats Widget -->

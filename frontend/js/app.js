@@ -4,8 +4,9 @@
  * Following ui-ux-pro-max-skill guidelines
  */
 
-// Application Constants
-const API_BASE_URL = 'http://localhost:8080/api/tasks';
+// Application Constants & Backend URLs
+const BACKEND_URL = 'http://localhost:8080/api';
+const API_BASE_URL = `${BACKEND_URL}/tasks`;
 const PAGE_SIZE = 6; // Đặt size trang vừa phải cho bento bộc cục đẹp
 
 // App State
@@ -61,8 +62,84 @@ const confirmModal = document.getElementById('confirm-modal');
 const deleteTaskTitleSpan = document.getElementById('delete-task-title');
 const btnConfirmDelete = document.getElementById('btn-confirm-delete');
 
+// ==========================================================================
+// Authentication Helper Functions (JWT Interceptors)
+// ==========================================================================
+
+function getAuthHeaders() {
+    const token = localStorage.getItem('accessToken');
+    return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+    };
+}
+
+async function refreshTokens() {
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (!refreshToken) return false;
+
+    try {
+        const res = await fetch(`${BACKEND_URL}/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken })
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            localStorage.setItem('accessToken', data.accessToken);
+            localStorage.setItem('refreshToken', data.refreshToken);
+            return true;
+        }
+    } catch (err) {
+        console.error("Lỗi khi refresh token:", err);
+    }
+    return false;
+}
+
+function handleLogout() {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('userEmail');
+    window.location.href = 'login.html';
+}
+
+async function authenticatedFetch(url, options = {}) {
+    options.headers = {
+        ...options.headers,
+        ...getAuthHeaders()
+    };
+
+    let response = await fetch(url, options);
+
+    if (response.status === 401) {
+        // Access Token hết hạn, thử refresh token
+        const refreshed = await refreshTokens();
+        if (refreshed) {
+            // Thực hiện lại request với token mới
+            options.headers = {
+                ...options.headers,
+                ...getAuthHeaders()
+            };
+            response = await fetch(url, options);
+        } else {
+            // Refresh token cũng hết hạn -> Yêu cầu login lại
+            handleLogout();
+            return new Response(JSON.stringify({ message: "Phiên đăng nhập đã hết hạn!" }), { status: 401 });
+        }
+    }
+
+    return response;
+}
+
 // Init App
 document.addEventListener('DOMContentLoaded', () => {
+    // Hiển thị email của người dùng hiện tại
+    document.getElementById('user-display-email').innerText = localStorage.getItem('userEmail') || 'zentask@gmail.com';
+
+    // Đăng ký sự kiện nút Đăng xuất
+    document.getElementById('btn-logout').addEventListener('click', handleLogout);
+
     // Tải danh sách công việc ban đầu
     fetchTasks();
 
@@ -99,7 +176,7 @@ async function fetchTasks() {
             queryParams.append('completed', filters.completed);
         }
 
-        const response = await fetch(`${API_BASE_URL}?${queryParams.toString()}`);
+        const response = await authenticatedFetch(`${API_BASE_URL}?${queryParams.toString()}`);
         
         if (!response.ok) {
             throw new Error('Không thể tải danh sách công việc từ máy chủ.');
@@ -139,7 +216,7 @@ async function fetchTasks() {
  */
 async function toggleTaskCompletionAPI(id) {
     try {
-        const response = await fetch(`${API_BASE_URL}/${id}/toggle`, {
+        const response = await authenticatedFetch(`${API_BASE_URL}/${id}/toggle`, {
             method: 'PATCH'
         });
 
@@ -176,7 +253,7 @@ async function saveTaskAPI(taskData, id = null) {
     clearFormErrors();
 
     try {
-        const response = await fetch(url, {
+        const response = await authenticatedFetch(url, {
             method: method,
             headers: {
                 'Content-Type': 'application/json'
@@ -216,7 +293,7 @@ async function saveTaskAPI(taskData, id = null) {
  */
 async function deleteTaskAPI(id) {
     try {
-        const response = await fetch(`${API_BASE_URL}/${id}`, {
+        const response = await authenticatedFetch(`${API_BASE_URL}/${id}`, {
             method: 'DELETE'
         });
 
@@ -369,8 +446,7 @@ function updatePaginationUI() {
  */
 async function updateStats() {
     try {
-        // Chúng tôi fetch toàn bộ để tính chính xác tổng số lượng (không phụ thuộc phân trang client)
-        const response = await fetch(`${API_BASE_URL}?size=2000`);
+        const response = await authenticatedFetch(`${API_BASE_URL}?size=2000`);
         if (!response.ok) return;
 
         const data = await response.json();
@@ -456,6 +532,7 @@ function initEventListeners() {
         }
     });
 
+    // 7. Phân trang trang sau
     btnNextPage.addEventListener('click', () => {
         if (currentPage < totalPages - 1) {
             currentPage++;
@@ -463,11 +540,11 @@ function initEventListeners() {
         }
     });
 
-    // 7. Mở Modal thêm mới
+    // 8. Mở Modal thêm mới
     document.getElementById('btn-open-create').addEventListener('click', () => openCreateModal());
     document.getElementById('btn-empty-create').addEventListener('click', () => openCreateModal());
 
-    // 8. Đóng Modal
+    // 9. Đóng Modal
     document.getElementById('btn-close-modal').addEventListener('click', closeModal);
     document.getElementById('btn-cancel-modal').addEventListener('click', closeModal);
     
@@ -476,13 +553,13 @@ function initEventListeners() {
         if (e.target === taskModal) closeModal();
     });
 
-    // 9. Submit Form
+    // 10. Submit Form
     taskForm.addEventListener('submit', (e) => {
         e.preventDefault();
         submitForm();
     });
 
-    // 10. Confirm Delete Modal Actions
+    // 11. Confirm Delete Modal Actions
     document.getElementById('btn-cancel-delete').addEventListener('click', closeDeleteModal);
     btnConfirmDelete.addEventListener('click', () => {
         if (selectedTaskIdForDelete) {
@@ -630,7 +707,6 @@ function displayBackendValidationErrors(details) {
         errorTitle.textContent = details.title;
         inputTitle.focus();
     }
-    // Nếu sau này mở rộng thêm các trường validate khác thì map tương tự ở đây
 }
 
 function setSubmitBtnLoading(isLoading) {
