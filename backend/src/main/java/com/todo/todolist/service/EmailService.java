@@ -21,6 +21,15 @@ public class EmailService {
     @org.springframework.beans.factory.annotation.Value("${app.frontend.url}")
     private String frontendUrl;
 
+    @org.springframework.beans.factory.annotation.Value("${app.mail.provider:smtp}")
+    private String mailProvider;
+
+    @org.springframework.beans.factory.annotation.Value("${app.mail.google-script.url:}")
+    private String googleScriptUrl;
+
+    @org.springframework.beans.factory.annotation.Value("${app.mail.google-script.secret:}")
+    private String googleScriptSecret;
+
     public void sendVerificationEmail(String toEmail, String verificationCode) {
         String verifyUrl = backendUrl + "/api/auth/verify?code=" + verificationCode;
         String subject = "[ZenTask] Xác nhận kích hoạt tài khoản của bạn";
@@ -59,6 +68,14 @@ public class EmailService {
     }
 
     private void sendHtmlEmail(String to, String subject, String htmlContent) {
+        if ("google_script".equalsIgnoreCase(mailProvider)) {
+            sendEmailViaGoogleScript(to, subject, htmlContent);
+        } else {
+            sendEmailViaSmtp(to, subject, htmlContent);
+        }
+    }
+
+    private void sendEmailViaSmtp(String to, String subject, String htmlContent) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -69,10 +86,36 @@ public class EmailService {
             helper.setText(htmlContent, true);
 
             mailSender.send(message);
-            log.info("Successfully sent HTML email to: {}", to);
+            log.info("Successfully sent SMTP HTML email to: {}", to);
         } catch (MessagingException e) {
-            log.error("Failed to send email to: {}", to, e);
-            throw new RuntimeException("Gửi mail thất bại: " + e.getMessage());
+            log.error("Failed to send SMTP email to: {}", to, e);
+            throw new RuntimeException("Gửi mail qua SMTP thất bại: " + e.getMessage());
+        }
+    }
+
+    private void sendEmailViaGoogleScript(String to, String subject, String htmlContent) {
+        try {
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+            java.util.Map<String, String> payload = new java.util.HashMap<>();
+            payload.put("secret", googleScriptSecret);
+            payload.put("to", to);
+            payload.put("subject", subject);
+            payload.put("text", "");
+            payload.put("html", htmlContent);
+
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
+
+            org.springframework.http.HttpEntity<java.util.Map<String, String>> requestEntity = new org.springframework.http.HttpEntity<>(payload, headers);
+
+            org.springframework.http.ResponseEntity<String> response = restTemplate.postForEntity(googleScriptUrl, requestEntity, String.class);
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                throw new RuntimeException("HTTP response code: " + response.getStatusCode());
+            }
+            log.info("Successfully sent Google Apps Script email to: {}", to);
+        } catch (Exception e) {
+            log.error("Failed to send Google Apps Script email to: {}", to, e);
+            throw new RuntimeException("Gửi mail qua Google Apps Script thất bại: " + e.getMessage());
         }
     }
 }
