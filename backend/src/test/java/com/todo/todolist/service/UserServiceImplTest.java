@@ -248,4 +248,49 @@ class UserServiceImplTest {
         verify(userRepository, times(1)).findByPasswordResetToken("reset-token");
         verify(userRepository, never()).save(any(User.class));
     }
+
+    @Test
+    void resendVerificationEmail_Success_ShouldResend() {
+        ResendVerificationRequest request = new ResendVerificationRequest("zentask@gmail.com");
+        sampleUser.setEnabled(false);
+        sampleUser.setVerificationCodeSentAt(LocalDateTime.now().minusHours(2)); // Gửi từ 2 tiếng trước, thoả mãn limit
+
+        when(userRepository.findByEmail("zentask@gmail.com")).thenReturn(Optional.of(sampleUser));
+        when(userRepository.save(any(User.class))).thenReturn(sampleUser);
+
+        userService.resendVerificationEmail(request);
+
+        assertNotNull(sampleUser.getVerificationCode());
+        assertNotNull(sampleUser.getVerificationCodeSentAt());
+        verify(userRepository, times(1)).findByEmail("zentask@gmail.com");
+        verify(userRepository, times(1)).save(sampleUser);
+        verify(emailService, times(1)).sendVerificationEmail(eq("zentask@gmail.com"), anyString(), any(), any());
+    }
+
+    @Test
+    void resendVerificationEmail_UserAlreadyEnabled_ShouldThrowException() {
+        ResendVerificationRequest request = new ResendVerificationRequest("zentask@gmail.com");
+        sampleUser.setEnabled(true); // Đã kích hoạt
+
+        when(userRepository.findByEmail("zentask@gmail.com")).thenReturn(Optional.of(sampleUser));
+
+        assertThrows(IllegalArgumentException.class, () -> userService.resendVerificationEmail(request));
+
+        verify(userRepository, times(1)).findByEmail("zentask@gmail.com");
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void resendVerificationEmail_RateLimitExceeded_ShouldThrowException() {
+        ResendVerificationRequest request = new ResendVerificationRequest("zentask@gmail.com");
+        sampleUser.setEnabled(false);
+        sampleUser.setVerificationCodeSentAt(LocalDateTime.now().minusMinutes(30)); // Mới gửi 30 phút trước -> Bị chặn vì chưa đủ 1 tiếng
+
+        when(userRepository.findByEmail("zentask@gmail.com")).thenReturn(Optional.of(sampleUser));
+
+        assertThrows(IllegalArgumentException.class, () -> userService.resendVerificationEmail(request));
+
+        verify(userRepository, times(1)).findByEmail("zentask@gmail.com");
+        verify(userRepository, never()).save(any(User.class));
+    }
 }

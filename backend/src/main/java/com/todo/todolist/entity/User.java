@@ -33,6 +33,9 @@ public class User {
     @Column(name = "verification_code")
     private String verificationCode;
 
+    @Column(name = "verification_code_sent_at")
+    private LocalDateTime verificationCodeSentAt;
+
     @Column(name = "password_reset_token")
     private String passwordResetToken;
 
