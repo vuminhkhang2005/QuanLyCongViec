@@ -112,7 +112,7 @@ async function authenticatedFetch(url, options = {}) {
 
     let response = await fetch(url, options);
 
-    if (response.status === 401) {
+    if (response.status === 401 || response.status === 403) {
         // Access Token hết hạn, thử refresh token
         const refreshed = await refreshTokens();
         if (refreshed) {
