@@ -30,6 +30,15 @@ public class EmailService {
     @org.springframework.beans.factory.annotation.Value("${app.mail.google-script.secret:}")
     private String googleScriptSecret;
 
+    @org.springframework.beans.factory.annotation.Value("${app.mail.brevo.api-key:}")
+    private String brevoApiKey;
+
+    @org.springframework.beans.factory.annotation.Value("${app.mail.brevo.sender-email:noreply@zentask.com}")
+    private String brevoSenderEmail;
+
+    @org.springframework.beans.factory.annotation.Value("${app.mail.brevo.sender-name:ZenTask}")
+    private String brevoSenderName;
+
     public void sendVerificationEmail(String toEmail, String verificationCode) {
         String verifyUrl = backendUrl + "/api/auth/verify?code=" + verificationCode;
         String subject = "[ZenTask] Xác nhận kích hoạt tài khoản của bạn";
@@ -70,6 +79,8 @@ public class EmailService {
     private void sendHtmlEmail(String to, String subject, String htmlContent) {
         if ("google_script".equalsIgnoreCase(mailProvider)) {
             sendEmailViaGoogleScript(to, subject, htmlContent);
+        } else if ("brevo".equalsIgnoreCase(mailProvider)) {
+            sendEmailViaBrevo(to, subject, htmlContent);
         } else {
             sendEmailViaSmtp(to, subject, htmlContent);
         }
@@ -116,6 +127,44 @@ public class EmailService {
         } catch (Exception e) {
             log.error("Failed to send Google Apps Script email to: {}", to, e);
             throw new RuntimeException("Gửi mail qua Google Apps Script thất bại: " + e.getMessage());
+        }
+    }
+
+    private void sendEmailViaBrevo(String to, String subject, String htmlContent) {
+        try {
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+            
+            java.util.Map<String, Object> payload = new java.util.HashMap<>();
+            
+            java.util.Map<String, String> sender = new java.util.HashMap<>();
+            sender.put("name", brevoSenderName);
+            sender.put("email", brevoSenderEmail);
+            payload.put("sender", sender);
+            
+            java.util.List<java.util.Map<String, String>> toList = new java.util.ArrayList<>();
+            java.util.Map<String, String> recipient = new java.util.HashMap<>();
+            recipient.put("email", to);
+            toList.add(recipient);
+            payload.put("to", toList);
+            
+            payload.put("subject", subject);
+            payload.put("htmlContent", htmlContent);
+
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
+            headers.set("accept", "application/json");
+            headers.set("api-key", brevoApiKey);
+
+            org.springframework.http.HttpEntity<java.util.Map<String, Object>> requestEntity = new org.springframework.http.HttpEntity<>(payload, headers);
+
+            org.springframework.http.ResponseEntity<String> response = restTemplate.postForEntity("https://api.brevo.com/v3/smtp/email", requestEntity, String.class);
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                throw new RuntimeException("HTTP response code: " + response.getStatusCode());
+            }
+            log.info("Successfully sent Brevo email to: {}", to);
+        } catch (Exception e) {
+            log.error("Failed to send Brevo email to: {}", to, e);
+            throw new RuntimeException("Gửi mail qua Brevo thất bại: " + e.getMessage());
         }
     }
 }
