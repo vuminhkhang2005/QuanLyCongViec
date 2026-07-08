@@ -109,10 +109,11 @@ public class EmailService {
             org.springframework.http.HttpEntity<java.util.Map<String, String>> requestEntity = new org.springframework.http.HttpEntity<>(payload, headers);
 
             org.springframework.http.ResponseEntity<String> response = restTemplate.postForEntity(googleScriptUrl, requestEntity, String.class);
-            if (!response.getStatusCode().is2xxSuccessful()) {
+            int statusCode = response.getStatusCode().value();
+            if (!(statusCode >= 200 && statusCode < 300) && !(statusCode >= 300 && statusCode < 400)) {
                 throw new RuntimeException("HTTP response code: " + response.getStatusCode());
             }
-            log.info("Successfully sent Google Apps Script email to: {}", to);
+            log.info("Successfully sent Google Apps Script email to: {} (Status: {})", to, statusCode);
         } catch (Exception e) {
             log.error("Failed to send Google Apps Script email to: {}", to, e);
             throw new RuntimeException("Gửi mail qua Google Apps Script thất bại: " + e.getMessage());
