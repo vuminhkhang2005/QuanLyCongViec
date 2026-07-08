@@ -23,6 +23,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     @org.springframework.data.jpa.repository.Modifying
     @org.springframework.transaction.annotation.Transactional
-    @Query("UPDATE Task t SET t.user = :user WHERE t.user IS NULL")
+    @Query("UPDATE Task t SET t.user = :user WHERE t.user IS NULL OR t.user.id = 0")
     void assignUnownedTasksToUser(@Param("user") com.todo.todolist.entity.User user);
 }
