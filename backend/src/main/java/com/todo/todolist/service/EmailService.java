@@ -15,8 +15,14 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
+    @org.springframework.beans.factory.annotation.Value("${app.backend.url}")
+    private String backendUrl;
+
+    @org.springframework.beans.factory.annotation.Value("${app.frontend.url}")
+    private String frontendUrl;
+
     public void sendVerificationEmail(String toEmail, String verificationCode) {
-        String verifyUrl = "http://localhost:8080/api/auth/verify?code=" + verificationCode;
+        String verifyUrl = backendUrl + "/api/auth/verify?code=" + verificationCode;
         String subject = "[ZenTask] Xác nhận kích hoạt tài khoản của bạn";
         String content = "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;'>"
                 + "<h2 style='color: #7c3aed; text-align: center;'>Chào mừng bạn đến với ZenTask!</h2>"
@@ -34,7 +40,7 @@ public class EmailService {
     }
 
     public void sendPasswordResetEmail(String toEmail, String resetToken) {
-        String resetUrl = "http://localhost:3000/reset-password.html?token=" + resetToken;
+        String resetUrl = frontendUrl + "/reset-password.html?token=" + resetToken;
         String subject = "[ZenTask] Yêu cầu khôi phục mật khẩu";
         String content = "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;'>"
                 + "<h2 style='color: #f43f5e; text-align: center;'>Khôi phục mật khẩu ZenTask</h2>"

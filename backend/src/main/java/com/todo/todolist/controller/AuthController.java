@@ -19,6 +19,9 @@ public class AuthController {
 
     private final UserService userService;
 
+    @org.springframework.beans.factory.annotation.Value("${app.frontend.url}")
+    private String frontendUrl;
+
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
         userService.registerUser(request);
@@ -31,9 +34,9 @@ public class AuthController {
     public RedirectView verifyEmail(@RequestParam("code") String code) {
         boolean verified = userService.verifyUser(code);
         if (verified) {
-            return new RedirectView("http://localhost:3000/login.html?verified=true");
+            return new RedirectView(frontendUrl + "/login.html?verified=true");
         } else {
-            return new RedirectView("http://localhost:3000/login.html?error=verification_failed");
+            return new RedirectView(frontendUrl + "/login.html?error=verification_failed");
         }
     }
 
