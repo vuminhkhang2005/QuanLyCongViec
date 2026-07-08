@@ -5,7 +5,9 @@
  */
 
 // Application Constants & Backend URLs
-const BACKEND_URL = 'http://localhost:8080/api';
+const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:8080/api'
+    : 'https://todolist-u37v.onrender.com/api';
 const API_BASE_URL = `${BACKEND_URL}/tasks`;
 const PAGE_SIZE = 6; // Đặt size trang vừa phải cho bento bộc cục đẹp
 
