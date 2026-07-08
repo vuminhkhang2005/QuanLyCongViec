@@ -35,8 +35,25 @@ public class EmailService {
     }
 
     public void sendVerificationEmail(String toEmail, String verificationCode, String customBackendUrl, String customFrontendUrl) {
-        String baseBackend = (customBackendUrl != null && !customBackendUrl.isEmpty()) ? customBackendUrl : this.backendUrl;
-        String baseFrontend = (customFrontendUrl != null && !customFrontendUrl.isEmpty()) ? customFrontendUrl : this.frontendUrl;
+        String baseBackend = customBackendUrl;
+        if (baseBackend == null || baseBackend.isEmpty() || baseBackend.contains("localhost") || baseBackend.contains("127.0.0.1")) {
+            if (this.backendUrl != null && !this.backendUrl.contains("localhost") && !this.backendUrl.contains("127.0.0.1")) {
+                baseBackend = this.backendUrl;
+            }
+        }
+        if (baseBackend == null || baseBackend.isEmpty()) {
+            baseBackend = this.backendUrl;
+        }
+
+        String baseFrontend = customFrontendUrl;
+        if (baseFrontend == null || baseFrontend.isEmpty() || baseFrontend.contains("localhost") || baseFrontend.contains("127.0.0.1")) {
+            if (this.frontendUrl != null && !this.frontendUrl.contains("localhost") && !this.frontendUrl.contains("127.0.0.1")) {
+                baseFrontend = this.frontendUrl;
+            }
+        }
+        if (baseFrontend == null || baseFrontend.isEmpty()) {
+            baseFrontend = this.frontendUrl;
+        }
         
         String verifyUrl = baseBackend + "/api/auth/verify?code=" + verificationCode;
         if (baseFrontend != null && !baseFrontend.isEmpty()) {
@@ -68,7 +85,15 @@ public class EmailService {
     }
 
     public void sendPasswordResetEmail(String toEmail, String resetToken, String customFrontendUrl) {
-        String baseFrontend = (customFrontendUrl != null && !customFrontendUrl.isEmpty()) ? customFrontendUrl : this.frontendUrl;
+        String baseFrontend = customFrontendUrl;
+        if (baseFrontend == null || baseFrontend.isEmpty() || baseFrontend.contains("localhost") || baseFrontend.contains("127.0.0.1")) {
+            if (this.frontendUrl != null && !this.frontendUrl.contains("localhost") && !this.frontendUrl.contains("127.0.0.1")) {
+                baseFrontend = this.frontendUrl;
+            }
+        }
+        if (baseFrontend == null || baseFrontend.isEmpty()) {
+            baseFrontend = this.frontendUrl;
+        }
         String resetUrl = baseFrontend + "/reset-password.html?token=" + resetToken;
         
         String subject = "[ZenTask] Yêu cầu khôi phục mật khẩu";
