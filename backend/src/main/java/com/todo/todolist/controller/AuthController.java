@@ -23,20 +23,34 @@ public class AuthController {
     private String frontendUrl;
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
-        userService.registerUser(request);
+    public ResponseEntity<?> register(
+            @Valid @RequestBody RegisterRequest request,
+            @RequestHeader(value = "Origin", required = false) String origin,
+            @RequestHeader(value = "Referer", required = false) String referer) {
+        
+        String dynamicBackendUrl = org.springframework.web.servlet.support.ServletUriComponentsBuilder
+                .fromCurrentContextPath()
+                .build()
+                .toUriString();
+        
+        String dynamicFrontendUrl = getFrontendUrl(origin, referer);
+        
+        userService.registerUser(request, dynamicBackendUrl, dynamicFrontendUrl);
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                 "message", "Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản."
         ));
     }
 
     @GetMapping("/verify")
-    public RedirectView verifyEmail(@RequestParam("code") String code) {
+    public RedirectView verifyEmail(
+            @RequestParam("code") String code,
+            @RequestParam(value = "frontendUrl", required = false) String clientFrontendUrl) {
         boolean verified = userService.verifyUser(code);
+        String finalFrontendUrl = (clientFrontendUrl != null && !clientFrontendUrl.isEmpty()) ? clientFrontendUrl : frontendUrl;
         if (verified) {
-            return new RedirectView(frontendUrl + "/login.html?verified=true");
+            return new RedirectView(finalFrontendUrl + "/login.html?verified=true");
         } else {
-            return new RedirectView(frontendUrl + "/login.html?error=verification_failed");
+            return new RedirectView(finalFrontendUrl + "/login.html?error=verification_failed");
         }
     }
 
@@ -53,11 +67,31 @@ public class AuthController {
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
-        userService.requestPasswordReset(request);
+    public ResponseEntity<?> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request,
+            @RequestHeader(value = "Origin", required = false) String origin,
+            @RequestHeader(value = "Referer", required = false) String referer) {
+        String dynamicFrontendUrl = getFrontendUrl(origin, referer);
+        userService.requestPasswordReset(request, dynamicFrontendUrl);
         return ResponseEntity.ok(Map.of(
                 "message", "Liên kết khôi phục mật khẩu đã được gửi tới email của bạn!"
         ));
+    }
+
+    private String getFrontendUrl(String origin, String referer) {
+        if (origin != null && !origin.isEmpty()) {
+            return origin;
+        }
+        if (referer != null && !referer.isEmpty()) {
+            try {
+                java.net.URI uri = new java.net.URI(referer);
+                String portPart = uri.getPort() == -1 ? "" : ":" + uri.getPort();
+                return uri.getScheme() + "://" + uri.getHost() + portPart;
+            } catch (Exception e) {
+                // Bỏ qua lỗi parse và dùng fallback
+            }
+        }
+        return frontendUrl;
     }
 
     @PostMapping("/reset-password")

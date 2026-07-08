@@ -41,8 +41,30 @@ public class UserServiceImpl implements UserService {
 
         userRepository.save(user);
         
-        // Gửi email xác thực kích hoạt tài khoản
+        // Gửi email xác thực kích hoạt tài khoản bằng bản cũ
         emailService.sendVerificationEmail(user.getEmail(), verificationCode);
+        log.info("Registered user: {}. Verification email sent.", user.getEmail());
+    }
+
+    @Override
+    @Transactional
+    public void registerUser(RegisterRequest request, String backendUrl, String frontendUrl) {
+        if (userRepository.findByEmail(request.email()).isPresent()) {
+            throw new IllegalArgumentException("Email đã được đăng ký trong hệ thống!");
+        }
+
+        String verificationCode = UUID.randomUUID().toString();
+        User user = User.builder()
+                .email(request.email().trim())
+                .password(passwordEncoder.encode(request.password()))
+                .enabled(false)
+                .verificationCode(verificationCode)
+                .build();
+
+        userRepository.save(user);
+        
+        // Gửi email xác thực kích hoạt tài khoản
+        emailService.sendVerificationEmail(user.getEmail(), verificationCode, backendUrl, frontendUrl);
         log.info("Registered user: {}. Verification email sent.", user.getEmail());
     }
 
@@ -122,8 +144,24 @@ public class UserServiceImpl implements UserService {
         user.setPasswordResetTokenExpiry(LocalDateTime.now().plusMinutes(15)); // Hạn 15 phút
         userRepository.save(user);
 
-        // Gửi mail hướng dẫn reset password
+        // Gửi mail hướng dẫn reset password bằng bản cũ
         emailService.sendPasswordResetEmail(user.getEmail(), resetToken);
+        log.info("Password reset request for: {}. Reset email sent.", user.getEmail());
+    }
+
+    @Override
+    @Transactional
+    public void requestPasswordReset(ForgotPasswordRequest request, String frontendUrl) {
+        User user = userRepository.findByEmail(request.email().trim())
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản với email này!"));
+
+        String resetToken = UUID.randomUUID().toString();
+        user.setPasswordResetToken(resetToken);
+        user.setPasswordResetTokenExpiry(LocalDateTime.now().plusMinutes(15)); // Hạn 15 phút
+        userRepository.save(user);
+
+        // Gửi mail hướng dẫn reset password
+        emailService.sendPasswordResetEmail(user.getEmail(), resetToken, frontendUrl);
         log.info("Password reset request for: {}. Reset email sent.", user.getEmail());
     }
 

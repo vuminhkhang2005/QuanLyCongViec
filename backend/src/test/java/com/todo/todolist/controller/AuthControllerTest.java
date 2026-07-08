@@ -41,7 +41,7 @@ class AuthControllerTest {
     @Test
     void register_Success_ShouldReturn201() throws Exception {
         RegisterRequest request = new RegisterRequest("newuser@gmail.com", "password123");
-        doNothing().when(userService).registerUser(any(RegisterRequest.class));
+        doNothing().when(userService).registerUser(any(RegisterRequest.class), any(), any());
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -49,7 +49,7 @@ class AuthControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.message", is("Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản.")));
 
-        verify(userService, times(1)).registerUser(any(RegisterRequest.class));
+        verify(userService, times(1)).registerUser(any(RegisterRequest.class), any(), any());
     }
 
     @Test
@@ -112,7 +112,7 @@ class AuthControllerTest {
     @Test
     void forgotPassword_Success_ShouldReturn200() throws Exception {
         ForgotPasswordRequest request = new ForgotPasswordRequest("zentask@gmail.com");
-        doNothing().when(userService).requestPasswordReset(any(ForgotPasswordRequest.class));
+        doNothing().when(userService).requestPasswordReset(any(ForgotPasswordRequest.class), any());
 
         mockMvc.perform(post("/api/auth/forgot-password")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -120,7 +120,7 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message", is("Liên kết khôi phục mật khẩu đã được gửi tới email của bạn!")));
 
-        verify(userService, times(1)).requestPasswordReset(any(ForgotPasswordRequest.class));
+        verify(userService, times(1)).requestPasswordReset(any(ForgotPasswordRequest.class), any());
     }
 
     @Test
