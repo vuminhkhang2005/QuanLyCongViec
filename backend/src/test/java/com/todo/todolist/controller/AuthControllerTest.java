@@ -136,4 +136,18 @@ class AuthControllerTest {
 
         verify(userService, times(1)).resetPassword(any(ResetPasswordRequest.class));
     }
+
+    @Test
+    void resendVerification_Success_ShouldReturn200() throws Exception {
+        ResendVerificationRequest request = new ResendVerificationRequest("zentask@gmail.com");
+        doNothing().when(userService).resendVerificationEmail(any(ResendVerificationRequest.class), any(), any());
+
+        mockMvc.perform(post("/api/auth/resend-verification")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message", is("Mã xác thực mới đã được gửi tới email của bạn!")));
+
+        verify(userService, times(1)).resendVerificationEmail(any(ResendVerificationRequest.class), any(), any());
+    }
 }

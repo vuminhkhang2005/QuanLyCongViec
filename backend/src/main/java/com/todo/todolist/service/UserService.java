@@ -14,4 +14,7 @@ public interface UserService {
     void requestPasswordReset(ForgotPasswordRequest request, String frontendUrl);
     
     void resetPassword(ResetPasswordRequest request);
+    
+    void resendVerificationEmail(ResendVerificationRequest request);
+    void resendVerificationEmail(ResendVerificationRequest request, String backendUrl, String frontendUrl);
 }

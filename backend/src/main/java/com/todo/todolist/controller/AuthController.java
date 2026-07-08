@@ -101,4 +101,23 @@ public class AuthController {
                 "message", "Đặt lại mật khẩu thành công! Bạn có thể đăng nhập bằng mật khẩu mới."
         ));
     }
+
+    @PostMapping("/resend-verification")
+    public ResponseEntity<?> resendVerification(
+            @Valid @RequestBody ResendVerificationRequest request,
+            @RequestHeader(value = "Origin", required = false) String origin,
+            @RequestHeader(value = "Referer", required = false) String referer) {
+        
+        String dynamicBackendUrl = org.springframework.web.servlet.support.ServletUriComponentsBuilder
+                .fromCurrentContextPath()
+                .build()
+                .toUriString();
+        
+        String dynamicFrontendUrl = getFrontendUrl(origin, referer);
+        
+        userService.resendVerificationEmail(request, dynamicBackendUrl, dynamicFrontendUrl);
+        return ResponseEntity.ok(Map.of(
+                "message", "Mã xác thực mới đã được gửi tới email của bạn!"
+        ));
+    }
 }

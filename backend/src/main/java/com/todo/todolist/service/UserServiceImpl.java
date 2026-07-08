@@ -37,6 +37,7 @@ public class UserServiceImpl implements UserService {
                 .password(passwordEncoder.encode(request.password()))
                 .enabled(false)
                 .verificationCode(verificationCode)
+                .verificationCodeSentAt(LocalDateTime.now())
                 .build();
 
         userRepository.save(user);
@@ -59,6 +60,7 @@ public class UserServiceImpl implements UserService {
                 .password(passwordEncoder.encode(request.password()))
                 .enabled(false)
                 .verificationCode(verificationCode)
+                .verificationCodeSentAt(LocalDateTime.now())
                 .build();
 
         userRepository.save(user);
@@ -182,5 +184,41 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
         
         log.info("Successfully reset password for user: {}", user.getEmail());
+    }
+
+    @Override
+    @Transactional
+    public void resendVerificationEmail(ResendVerificationRequest request) {
+        resendVerificationEmail(request, null, null);
+    }
+
+    @Override
+    @Transactional
+    public void resendVerificationEmail(ResendVerificationRequest request, String backendUrl, String frontendUrl) {
+        User user = userRepository.findByEmail(request.email().trim())
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản với email này!"));
+
+        if (user.isEnabled()) {
+            throw new IllegalArgumentException("Tài khoản đã được kích hoạt trước đó!");
+        }
+
+        // Kiểm tra giới hạn 1 tiếng
+        if (user.getVerificationCodeSentAt() != null && 
+            user.getVerificationCodeSentAt().plusHours(1).isAfter(LocalDateTime.now())) {
+            
+            java.time.Duration duration = java.time.Duration.between(LocalDateTime.now(), user.getVerificationCodeSentAt().plusHours(1));
+            long minutesLeft = duration.toMinutes();
+            throw new IllegalArgumentException("Bạn chỉ có thể gửi lại mã xác nhận sau " + minutesLeft + " phút nữa!");
+        }
+
+        // Tạo mã xác thực mới và cập nhật thời điểm gửi
+        String verificationCode = UUID.randomUUID().toString();
+        user.setVerificationCode(verificationCode);
+        user.setVerificationCodeSentAt(LocalDateTime.now());
+        userRepository.save(user);
+
+        // Gửi email
+        emailService.sendVerificationEmail(user.getEmail(), verificationCode, backendUrl, frontendUrl);
+        log.info("Resent verification email to: {}", user.getEmail());
     }
 }
